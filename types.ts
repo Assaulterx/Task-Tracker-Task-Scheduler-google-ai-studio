@@ -46,6 +46,25 @@ export interface UserStats {
   coins: number;
 }
 
+export interface UserProfile {
+  name: string;
+  email: string;
+  age: string;
+  dob: string;
+  avatarUrl?: string;
+  preferences: {
+    dailyEmail: boolean;
+    weeklyReport: boolean;
+    monthlyReport: boolean;
+  };
+}
+
+export interface TimerSettings {
+  workMinutes: number;
+  shortBreakMinutes: number;
+  longBreakMinutes: number;
+}
+
 export interface AIAnalysisResult {
   suggestion: string;
   priorityScore: number;

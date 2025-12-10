@@ -4,12 +4,13 @@ import TaskCard from './components/TaskCard';
 import FocusTimer from './components/FocusTimer';
 import GamificationBar from './components/GamificationBar';
 import AIAssistant from './components/AIAssistant';
+import ProfileSettings from './components/ProfileSettings';
 import { parseNaturalLanguageTask, generateTaskBreakdown, getDailyMotivation } from './services/geminiService';
-import { Task, UserStats, Priority, Status, EnergyLevel } from './types';
+import { Task, UserStats, Priority, Status, EnergyLevel, UserProfile, TimerSettings } from './types';
 import { Plus, Search, Filter, Loader2, Sparkles } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
-// Mock Data
+// Mock Data - Initial Tasks kept for demo, but Profile data will be empty
 const INITIAL_TASKS: Task[] = [
   {
     id: '1',
@@ -58,13 +59,33 @@ const App: React.FC = () => {
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [motivation, setMotivation] = useState('Loading daily inspiration...');
   
+  // User Profile State - Empty by default
+  const [userProfile, setUserProfile] = useState<UserProfile>({
+    name: '',
+    email: '',
+    age: '',
+    dob: '',
+    preferences: {
+      dailyEmail: false,
+      weeklyReport: false,
+      monthlyReport: false
+    }
+  });
+
+  // Timer Settings State
+  const [timerSettings, setTimerSettings] = useState<TimerSettings>({
+    workMinutes: 25,
+    shortBreakMinutes: 5,
+    longBreakMinutes: 15
+  });
+  
   const [stats, setStats] = useState<UserStats>({
-    xp: 2450,
-    level: 2,
-    streak: 5,
-    tasksCompleted: 12,
-    focusMinutes: 320,
-    coins: 150
+    xp: 0,
+    level: 1,
+    streak: 0,
+    tasksCompleted: 0,
+    focusMinutes: 0,
+    coins: 0
   });
 
   useEffect(() => {
@@ -73,6 +94,15 @@ const App: React.FC = () => {
   }, []);
 
   // --- Handlers ---
+
+  const handleUpdateProfile = (updatedProfile: UserProfile) => {
+    setUserProfile(updatedProfile);
+    // Persist to local storage or backend in real app
+  };
+
+  const handleUpdateTimerSettings = (settings: TimerSettings) => {
+    setTimerSettings(settings);
+  };
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,7 +189,9 @@ const App: React.FC = () => {
       {/* Welcome & Motivation */}
       <div className="bg-gradient-to-r from-indigo-900/50 to-purple-900/50 rounded-2xl p-8 border border-indigo-500/20 relative overflow-hidden">
         <div className="relative z-10">
-          <h2 className="text-3xl font-bold text-white mb-2">Good Afternoon, Creator.</h2>
+          <h2 className="text-3xl font-bold text-white mb-2">
+            {userProfile.name ? `Welcome back, ${userProfile.name}.` : 'Welcome back, Creator.'}
+          </h2>
           <p className="text-indigo-200 text-lg font-light italic">"{motivation}"</p>
           <div className="mt-6 flex gap-4">
             <button 
@@ -212,8 +244,8 @@ const App: React.FC = () => {
          <h3 className="text-slate-400 text-sm font-medium mb-4 uppercase tracking-wider">Productivity Trend</h3>
          <ResponsiveContainer width="100%" height="100%">
             <LineChart data={[
-                { name: 'Mon', xp: 400 }, { name: 'Tue', xp: 300 }, { name: 'Wed', xp: 600 },
-                { name: 'Thu', xp: 800 }, { name: 'Fri', xp: 500 }, { name: 'Sat', xp: 200 }, { name: 'Sun', xp: 450 }
+                { name: 'Mon', xp: 0 }, { name: 'Tue', xp: 0 }, { name: 'Wed', xp: 0 },
+                { name: 'Thu', xp: 0 }, { name: 'Fri', xp: 0 }, { name: 'Sat', xp: 0 }, { name: 'Sun', xp: 0 }
             ]}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                 <XAxis dataKey="name" stroke="#94a3b8" />
@@ -301,8 +333,8 @@ const App: React.FC = () => {
              <h3 className="text-slate-200 font-semibold mb-6">Weekly Focus Distribution</h3>
              <ResponsiveContainer width="100%" height="85%">
                 <BarChart data={[
-                    { name: 'Mon', mins: 120 }, { name: 'Tue', mins: 180 }, { name: 'Wed', mins: 90 },
-                    { name: 'Thu', mins: 240 }, { name: 'Fri', mins: 150 }, { name: 'Sat', mins: 60 }, { name: 'Sun', mins: 30 }
+                    { name: 'Mon', mins: 0 }, { name: 'Tue', mins: 0 }, { name: 'Wed', mins: 0 },
+                    { name: 'Thu', mins: 0 }, { name: 'Fri', mins: 0 }, { name: 'Sat', mins: 0 }, { name: 'Sun', mins: 0 }
                 ]}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                     <XAxis dataKey="name" stroke="#94a3b8" />
@@ -320,13 +352,22 @@ const App: React.FC = () => {
       <Sidebar activeView={activeView} setActiveView={setActiveView} />
       
       <main className="flex-1 flex flex-col h-screen relative overflow-hidden">
-        <GamificationBar stats={stats} />
+        <GamificationBar stats={stats} profile={userProfile} />
         
         <div className="flex-1 overflow-hidden p-4 md:p-8 max-w-7xl mx-auto w-full">
           {activeView === 'dashboard' && renderDashboard()}
           {activeView === 'tasks' && renderTasks()}
-          {activeView === 'focus' && <FocusTimer updateFocusMinutes={updateFocusMinutes} />}
+          {activeView === 'focus' && (
+            <FocusTimer 
+              updateFocusMinutes={updateFocusMinutes} 
+              settings={timerSettings}
+              onUpdateSettings={handleUpdateTimerSettings}
+            />
+          )}
           {activeView === 'analytics' && renderAnalytics()}
+          {activeView === 'profile' && (
+             <ProfileSettings profile={userProfile} onUpdate={handleUpdateProfile} />
+          )}
           {activeView === 'ai-planner' && (
               <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
                   <div className="bg-slate-800 p-8 rounded-full mb-4">

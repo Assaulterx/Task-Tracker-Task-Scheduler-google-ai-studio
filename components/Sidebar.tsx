@@ -5,7 +5,8 @@ import {
   Target, 
   BarChart2, 
   Sparkles, 
-  Settings 
+  Settings,
+  User
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -21,6 +22,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isMobile }
     { id: 'focus', icon: Target, label: 'Focus Mode' },
     { id: 'analytics', icon: BarChart2, label: 'Analytics' },
     { id: 'ai-planner', icon: Sparkles, label: 'AI Planner' },
+    { id: 'profile', icon: User, label: 'Profile' },
   ];
 
   const baseClasses = isMobile 
@@ -59,10 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isMobile }
 
       {!isMobile && (
         <div className="mt-auto pt-6 border-t border-slate-800">
-           <button className="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-slate-300 transition-colors w-full">
-            <Settings size={20} />
-            <span>Settings</span>
-          </button>
+           {/* Settings functionality is now integrated into Profile or specific modules */}
         </div>
       )}
     </div>

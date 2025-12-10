@@ -1,17 +1,43 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Coffee } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Coffee, Settings as SettingsIcon, X } from 'lucide-react';
+import { TimerSettings } from '../types';
 
 interface FocusTimerProps {
   updateFocusMinutes: (mins: number) => void;
+  settings: TimerSettings;
+  onUpdateSettings: (settings: TimerSettings) => void;
 }
 
-const FocusTimer: React.FC<FocusTimerProps> = ({ updateFocusMinutes }) => {
-  const [timeLeft, setTimeLeft] = useState(25 * 60);
+const FocusTimer: React.FC<FocusTimerProps> = ({ updateFocusMinutes, settings, onUpdateSettings }) => {
+  const [timeLeft, setTimeLeft] = useState(settings.workMinutes * 60);
   const [isActive, setIsActive] = useState(false);
   const [mode, setMode] = useState<'work' | 'shortBreak' | 'longBreak'>('work');
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
   
-  const totalTime = mode === 'work' ? 25 * 60 : (mode === 'shortBreak' ? 5 * 60 : 15 * 60);
+  // Local state for editing settings
+  const [editSettings, setEditSettings] = useState<TimerSettings>(settings);
+
+  // Sync timeLeft when settings change if not active
+  useEffect(() => {
+    if (!isActive) {
+      if (mode === 'work') setTimeLeft(settings.workMinutes * 60);
+      else if (mode === 'shortBreak') setTimeLeft(settings.shortBreakMinutes * 60);
+      else setTimeLeft(settings.longBreakMinutes * 60);
+    }
+    setEditSettings(settings);
+  }, [settings, mode, isActive]);
+
+  const getTotalTime = () => {
+    switch (mode) {
+      case 'work': return settings.workMinutes * 60;
+      case 'shortBreak': return settings.shortBreakMinutes * 60;
+      case 'longBreak': return settings.longBreakMinutes * 60;
+      default: return 25 * 60;
+    }
+  };
+
+  const totalTime = getTotalTime();
   const progress = ((totalTime - timeLeft) / totalTime) * 100;
   
   // Circumference for SVG circle
@@ -25,13 +51,10 @@ const FocusTimer: React.FC<FocusTimerProps> = ({ updateFocusMinutes }) => {
     if (isActive && timeLeft > 0) {
       timerRef.current = window.setInterval(() => {
         setTimeLeft((prev) => prev - 1);
-        if (mode === 'work') {
-            // Update stats logic could go here every minute, but simpler to do it on finish
-        }
       }, 1000);
     } else if (timeLeft === 0) {
       if (isActive && mode === 'work') {
-         updateFocusMinutes(25);
+         updateFocusMinutes(settings.workMinutes);
          // Play complete sound
       }
       setIsActive(false);
@@ -41,7 +64,7 @@ const FocusTimer: React.FC<FocusTimerProps> = ({ updateFocusMinutes }) => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isActive, timeLeft, mode, updateFocusMinutes]);
+  }, [isActive, timeLeft, mode, updateFocusMinutes, settings]);
 
   const toggleTimer = () => setIsActive(!isActive);
   
@@ -53,7 +76,7 @@ const FocusTimer: React.FC<FocusTimerProps> = ({ updateFocusMinutes }) => {
   const switchMode = (newMode: typeof mode) => {
     setMode(newMode);
     setIsActive(false);
-    setTimeLeft(newMode === 'work' ? 25 * 60 : (newMode === 'shortBreak' ? 5 * 60 : 15 * 60));
+    // Time set will be handled by useEffect based on mode change
   };
 
   const formatTime = (seconds: number) => {
@@ -62,8 +85,65 @@ const FocusTimer: React.FC<FocusTimerProps> = ({ updateFocusMinutes }) => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleSaveSettings = () => {
+    onUpdateSettings(editSettings);
+    setShowSettings(false);
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center h-full p-8 animate-fade-in">
+    <div className="flex flex-col items-center justify-center h-full p-8 animate-fade-in relative">
+      
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm z-20 flex items-center justify-center rounded-2xl animate-scale-up">
+          <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 w-80 shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-white text-lg">Timer Settings</h3>
+              <button onClick={() => setShowSettings(false)} className="text-slate-400 hover:text-white">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs text-slate-400 uppercase font-bold mb-1">Focus Duration (min)</label>
+                <input 
+                  type="number" 
+                  value={editSettings.workMinutes}
+                  onChange={e => setEditSettings({...editSettings, workMinutes: parseInt(e.target.value) || 1})}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 uppercase font-bold mb-1">Short Break (min)</label>
+                <input 
+                  type="number" 
+                  value={editSettings.shortBreakMinutes}
+                  onChange={e => setEditSettings({...editSettings, shortBreakMinutes: parseInt(e.target.value) || 1})}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 uppercase font-bold mb-1">Long Break (min)</label>
+                <input 
+                  type="number" 
+                  value={editSettings.longBreakMinutes}
+                  onChange={e => setEditSettings({...editSettings, longBreakMinutes: parseInt(e.target.value) || 1})}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+
+              <button 
+                onClick={handleSaveSettings}
+                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-lg mt-4 transition-colors"
+              >
+                Save Settings
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-4 mb-12 bg-slate-800 p-1.5 rounded-xl border border-slate-700">
         {[
           { id: 'work', label: 'Deep Work' },
@@ -146,6 +226,14 @@ const FocusTimer: React.FC<FocusTimerProps> = ({ updateFocusMinutes }) => {
           className="p-4 rounded-full bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white transition-all border border-slate-700"
         >
           <RotateCcw size={24} />
+        </button>
+
+        <button
+          onClick={() => setShowSettings(true)}
+          className="absolute bottom-8 right-8 p-3 rounded-xl bg-slate-800/50 text-slate-400 hover:bg-slate-700 hover:text-white transition-all border border-slate-700/50"
+          title="Timer Settings"
+        >
+          <SettingsIcon size={20} />
         </button>
       </div>
     </div>

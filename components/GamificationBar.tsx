@@ -1,12 +1,13 @@
 import React from 'react';
-import { UserStats } from '../types';
-import { Trophy, Flame, Star, Zap } from 'lucide-react';
+import { UserStats, UserProfile } from '../types';
+import { Trophy, Flame, Zap, User as UserIcon } from 'lucide-react';
 
 interface GamificationBarProps {
   stats: UserStats;
+  profile?: UserProfile;
 }
 
-const GamificationBar: React.FC<GamificationBarProps> = ({ stats }) => {
+const GamificationBar: React.FC<GamificationBarProps> = ({ stats, profile }) => {
   const xpForNextLevel = stats.level * 1000;
   const progress = (stats.xp / xpForNextLevel) * 100;
 
@@ -27,7 +28,9 @@ const GamificationBar: React.FC<GamificationBarProps> = ({ stats }) => {
               </div>
             </div>
             <div>
-              <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">Level {stats.level}</div>
+              <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">
+                {profile?.name ? profile.name : `Level ${stats.level}`}
+              </div>
               <div className="text-sm text-white font-bold">Productivity Ninja</div>
             </div>
           </div>
@@ -63,6 +66,14 @@ const GamificationBar: React.FC<GamificationBarProps> = ({ stats }) => {
               <span className="text-xs text-slate-400 ml-1">Focus Mins</span>
             </div>
           </div>
+
+          {profile && profile.avatarUrl ? (
+             <img src={profile.avatarUrl} alt="Profile" className="w-10 h-10 rounded-full border-2 border-indigo-500 object-cover" />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400">
+              <UserIcon size={20} />
+            </div>
+          )}
         </div>
       </div>
     </div>
